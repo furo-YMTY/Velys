@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="VÉLYS">
+<title>VÉLYS</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#0b0f1a;color:#e8ecf5;font:16px -apple-system,sans-serif;height:100dvh}
+#lock,#app{height:100%;padding:16px;flex-direction:column}
+#lock{display:flex;justify-content:center;align-items:center;gap:12px}
+#app{display:none}
+h1{margin:0;letter-spacing:4px;color:#7fb2ff}
+input,button{font:inherit;border-radius:12px;border:0;padding:12px}
+input{background:#1a2236;color:#fff;flex:1}
+button{background:#3d6fe0;color:#fff}
+header{display:flex;justify-content:space-between;align-items:center;padding-bottom:8px}
+header div{display:flex;gap:8px}
+#chat{flex:1;overflow:auto;display:flex;flex-direction:column;gap:8px}
+.m{padding:10px 14px;border-radius:16px;max-width:85%;white-space:pre-wrap}
+.user{background:#3d6fe0;align-self:flex-end}
+.velys{background:#1a2236;align-self:flex-start}
+footer{display:flex;gap:8px;padding-top:8px}
+</style></head><body>
+<div id="lock"><h1>VÉLYS</h1><div id="lockmsg"></div>
+<input id="pw" type="password" placeholder="Code secret"><button id="go">Entrer</button></div>
+<div id="app">
+<header><h1>VÉLYS</h1><div><button id="bm">Souvenirs</button><button id="bk">Clé</button></div></header>
+<div id="chat"></div>
+<footer><input id="in" placeholder="Parle à VÉLYS..."><button id="send">OK</button></footer>
+</div>
