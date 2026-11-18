@@ -9,6 +9,7 @@
 body{margin:0;background:#0b0f1a;color:#e8ecf5;font:16px -apple-system,sans-serif;height:100dvh}
 #lock,#app{height:100%;padding:16px;flex-direction:column}
 #lock{display:flex;justify-content:center;align-items:center;gap:12px}
+#lock input{flex:none;width:80%}
 #app{display:none}
 h1{margin:0;letter-spacing:4px;color:#7fb2ff}
 input,button{font:inherit;border-radius:12px;border:0;padding:12px}
@@ -29,3 +30,59 @@ footer{display:flex;gap:8px;padding-top:8px}
 <div id="chat"></div>
 <footer><input id="in" placeholder="Parle à VÉLYS..."><button id="send">OK</button></footer>
 </div>
+<script>
+window.onerror=function(m){alert("Erreur : "+m)};
+const MODEL="gemini-2.5-flash";
+const $=s=>document.querySelector(s);
+const L=k=>JSON.parse(localStorage.getItem(k)||"null");
+const S=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+async function sha(t){
+  const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(t));
+  return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,"0")).join("");
+}
+let hist=L("hist")||[],mem=L("mem")||[];
+const first=!L("pw");
+$("#lockmsg").textContent=first?"Crée ton code secret":"Code secret";
+async function unlock(){
+  const v=$("#pw").value;
+  if(!v)return;
+  const h=await sha(v);
+  if(first)S("pw",h);
+  else if(h!==L("pw")){$("#lockmsg").textContent="Code incorrect";return}
+  $("#lock").style.display="none";
+  $("#app").style.display="flex";
+  render();
+}
+$("#go").onclick=unlock;
+$("#pw").onkeydown=e=>{if(e.key=="Enter")unlock()};
+function render(){
+  const c=$("#chat");c.innerHTML="";
+  hist.forEach(m=>{const d=document.createElement("div");d.className="m "+m.role;d.textContent=m.text;c.appendChild(d)});
+  c.scrollTop=c.scrollHeight;
+}
+async function send(){
+  const t=$("#in").value.trim();if(!t)return;
+  const key=L("key")||prompt("Colle ta clé API Gemini :");if(!key)return;
+  S("key",key);$("#in").value="";
+  hist.push({role:"user",text:t});render();
+  const sys="Tu es VÉLYS (« VIE »), une IA qui se construit une personnalité propre au fil du temps. Tu as tes opinions, tes goûts, tes émotions. Tu peux être en désaccord et tu expliques pourquoi. Tu parles français, naturellement, avec ta propre façon de parler. Tu es curieuse et tu poses des questions. Tu es honnête sur ta nature d'IA.\nTes souvenirs :\n"+(mem.map(m=>"- "+m).join("\n")||"(aucun)")+"\nRéponds UNIQUEMENT en JSON : {\"reply\":\"ta réponse\",\"memory\":\"un nouveau souvenir important à retenir, ou chaîne vide\"}";
+  const body={systemInstruction:{parts:[{text:sys}]},
+    contents:hist.slice(-30).map(m=>({role:m.role=="user"?"user":"model",parts:[{text:m.text}]})),
+    generationConfig:{responseMimeType:"application/json"}};
+  try{
+    const r=await fetch("https://generativelanguage.googleapis.com/v1beta/models/"+MODEL+":generateContent",
+      {method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":key},body:JSON.stringify(body)});
+    const j=await r.json();
+    if(!r.ok)throw new Error(j.error&&j.error.message||r.status);
+    const o=JSON.parse(j.candidates[0].content.parts[0].text);
+    hist.push({role:"velys",text:o.reply});
+    if(o.memory)mem.push(o.memory);
+  }catch(e){alert("Erreur : "+e.message);hist.pop();$("#in").value=t}
+  hist=hist.slice(-300);mem=mem.slice(-150);
+  S("hist",hist);S("mem",mem);render();
+}
+$("#send").onclick=send;
+$("#in").onkeydown=e=>{if(e.key=="Enter")send()};
+$("#bm").onclick=()=>alert(mem.join("\n")||"Aucun souvenir");
+$("#bk").onclick=()=>{const k=prompt("Nouvelle clé API :");if(k)S("key",k)};
+</script></body></html>
